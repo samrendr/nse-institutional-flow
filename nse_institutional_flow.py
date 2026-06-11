@@ -259,21 +259,30 @@ def fetch_option_chain_both(session: requests.Session, symbol: str) -> dict:
 
 
 def fetch_block_deals(session: requests.Session) -> list[dict]:
-    """Fetch today's block deals. Returns list of dicts with stock, side, qty, price."""
+    """Fetch today's block deals from NSE's /api/block-deal endpoint.
+
+    NSE aggregates block deals per symbol per session (Session 1 = morning,
+    Session 2 = afternoon). There is no public buy-side/sell-side flag — but
+    the % change from previous close hints at which way the aggressor leaned.
+    Returns list sorted by deal value (largest first).
+    """
     data = fetch_json(session, NSE_API["block_deal"])
     if not data:
         return []
-    raw = data.get("data", [])
+    raw = data.get("data", []) or []
     deals = []
-    for row in raw[:20]:  # top 20 by value
+    for row in raw:
+        value_rupees = row.get("totalTradedValue") or 0
         deals.append({
-            "symbol": row.get("symbol"),
-            "client": row.get("clientName") or row.get("client"),
-            "qty": row.get("quantityTraded") or row.get("quantity"),
-            "price": row.get("tradePrice") or row.get("price"),
-            "type": row.get("buySell", "").upper(),
+            "symbol":   row.get("symbol"),
+            "session":  row.get("session"),
+            "value_cr": value_rupees / 1e7,  # raw rupees → crores
+            "qty":      row.get("totalTradedVolume"),
+            "price":    row.get("lastPrice"),
+            "pchange":  row.get("pchange"),
         })
-    return deals
+    deals.sort(key=lambda d: d.get("value_cr") or 0, reverse=True)
+    return deals[:20]
 
 
 # ============ HISTORY (CSV) ============
@@ -452,9 +461,17 @@ def print_panel(snapshot: dict, history: pd.DataFrame) -> None:
 
     deals = snapshot.get("block_deals", [])
     if deals:
-        print(f"  BLOCK DEALS (top {len(deals)})")
-        for d in deals[:5]:
-            print(f"    {str(d.get('type') or '?'):4} {str(d.get('symbol') or '?'):<14} {str(d.get('qty') or '?'):>10}  @ {d.get('price') or '?'}")
+        shown = deals[:5]
+        print(f"  BLOCK DEALS (top {len(shown)} by value)")
+        for d in shown:
+            sess  = (d.get("session") or "")[-1:] or "?"          # "Session 1" → "1"
+            sym   = (d.get("symbol")  or "?")[:14]
+            val   = d.get("value_cr") or 0
+            price = d.get("price")
+            pch   = d.get("pchange")
+            pch_s = f"{pch:+.2f}%" if isinstance(pch, (int, float)) else "    ?"
+            price_s = f"₹{price:>6}" if isinstance(price, (int, float)) else "      ?"
+            print(f"    S{sess}  {sym:<14}  ₹{val:>7,.1f} Cr  @ {price_s}  ({pch_s})")
         print()
 
     print(f"  VERDICT:  {verdict}")
@@ -533,18 +550,6 @@ def main():
         print_panel(snapshot, history)
     except Exception as e:
         print(f"  (panel print failed: {e}; continuing to save data)")
-
-    deals = snapshot.get("block_deals", [])
-    if deals:
-        print(f"  BLOCK DEALS (top {min(5, len(deals))})")
-        for d in deals[:5]:
-            print(f"    {str(d.get('type') or '?'):4} {str(d.get('symbol') or '?'):<14} {str(d.get('qty') or '?'):>10}  @ {d.get('price') or '?'}")
-        print()
-
-    print(f"  VERDICT:  {snapshot.get('verdict','—')}")
-    print()
-    print("=" * 90)
-    print()
 
     if not args.no_log:
         append_history(snapshot)
