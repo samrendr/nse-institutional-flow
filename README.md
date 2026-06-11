@@ -23,6 +23,7 @@ You can use either or both. They don't conflict — each writes to its own locat
 | `requirements.txt` | Python deps (requests, pandas). |
 | `.github/workflows/daily.yml` | GitHub Actions cron job — runs both scripts daily. |
 | `com.fiveema.nseflow.plist` | macOS launchd config for local automation. |
+| `run_daily.sh` | Wrapper called by the plist — fetches, regenerates, commits, pushes. |
 | `data/nse_flow_history.csv` | Auto-generated. Persistent daily log. |
 | `docs/index.html` | Auto-generated. Served via GitHub Pages. |
 
@@ -94,27 +95,39 @@ hybrid if needed.
 
 ## Setup — Local (macOS launchd)
 
-Use this if you want a guaranteed-working local backup (since NSE doesn't block Indian residential IPs).
+Use this if you want a guaranteed-working data source (NSE doesn't block Indian residential IPs).
+The local job runs `run_daily.sh`, which: fetches → regenerates dashboard → commits → pushes to GitHub.
+That means the cloud cron failure is moot — your Mac feeds the dashboard from home each day.
 
 ```bash
-# Copy plist to launchd's load directory
+# 1. Copy plist to launchd's load directory
 cp ~/Documents/fiveema/com.fiveema.nseflow.plist ~/Library/LaunchAgents/
 
-# Load and schedule it
+# 2. Load and schedule it
 launchctl load ~/Library/LaunchAgents/com.fiveema.nseflow.plist
 
-# Verify scheduled
+# 3. Verify scheduled
 launchctl list | grep fiveema
 
-# Test the script directly
-python3 ~/Documents/fiveema/nse_institutional_flow.py --force --no-log
+# 4. Test the wrapper end-to-end (fetch, regen, commit, push)
+bash ~/Documents/fiveema/run_daily.sh
 ```
 
 The job runs daily at 6:45 PM IST. Your Mac must be awake (display can be off, but not in deep sleep).
 
+The first test run must succeed at `git push` — if it doesn't, check `gh auth status` and confirm
+the osxkeychain credential helper has your token. launchd jobs in `~/Library/LaunchAgents/` run in
+your user session so they inherit keychain access; jobs in `/Library/LaunchDaemons/` would not.
+
 To stop:
 ```bash
 launchctl unload ~/Library/LaunchAgents/com.fiveema.nseflow.plist
+```
+
+To inspect what it did most recently:
+```bash
+tail ~/Documents/fiveema/data/nse_flow_stdout.log
+tail ~/Documents/fiveema/data/nse_flow_stderr.log
 ```
 
 ---

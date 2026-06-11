@@ -454,7 +454,7 @@ def print_panel(snapshot: dict, history: pd.DataFrame) -> None:
     if deals:
         print(f"  BLOCK DEALS (top {len(deals)})")
         for d in deals[:5]:
-            print(f"    {d.get('type','?'):4} {d.get('symbol','?'):<14} {d.get('qty','?'):>10}  @ {d.get('price','?')}")
+            print(f"    {str(d.get('type') or '?'):4} {str(d.get('symbol') or '?'):<14} {str(d.get('qty') or '?'):>10}  @ {d.get('price') or '?'}")
         print()
 
     print(f"  VERDICT:  {verdict}")
@@ -529,13 +529,16 @@ def main():
     snapshot["block_deals"] = fetch_block_deals(session)
 
     history = load_history()
-    print_panel(snapshot, history)
+    try:
+        print_panel(snapshot, history)
+    except Exception as e:
+        print(f"  (panel print failed: {e}; continuing to save data)")
 
     deals = snapshot.get("block_deals", [])
     if deals:
         print(f"  BLOCK DEALS (top {min(5, len(deals))})")
         for d in deals[:5]:
-            print(f"    {d.get('type','?'):4} {d.get('symbol','?'):<14} {d.get('qty','?'):>10}  @ {d.get('price','?')}")
+            print(f"    {str(d.get('type') or '?'):4} {str(d.get('symbol') or '?'):<14} {str(d.get('qty') or '?'):>10}  @ {d.get('price') or '?'}")
         print()
 
     print(f"  VERDICT:  {snapshot.get('verdict','—')}")

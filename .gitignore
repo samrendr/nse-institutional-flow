@@ -10,6 +10,7 @@
 !/requirements.txt
 !/nse_institutional_flow.py
 !/generate_dashboard.py
+!/run_daily.sh
 !/com.fiveema.nseflow.plist
 !/data/
 !/docs/
