@@ -1,0 +1,24 @@
+# Ignore everything in the working directory by default.
+# This protects the local trading-strategy files (Pine indicators,
+# backtests, encyclopedias) from being accidentally pushed to GitHub.
+/*
+
+# Whitelist only the files that make up the NSE Institutional Flow Tracker.
+!/.gitignore
+!/.github/
+!/README.md
+!/requirements.txt
+!/nse_institutional_flow.py
+!/generate_dashboard.py
+!/com.fiveema.nseflow.plist
+!/data/
+!/docs/
+
+# Logs from launchd
+data/*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.DS_Store

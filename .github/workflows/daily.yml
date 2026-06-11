@@ -1,0 +1,57 @@
+name: NSE Daily Flow
+
+# Schedule: 13:15 UTC = 18:45 IST (6:45 PM India time)
+# Cron: minute hour day-of-month month day-of-week (1=Mon, 5=Fri)
+# Runs Mon-Fri only. Weekends skip naturally.
+on:
+  schedule:
+    - cron: '15 13 * * 1-5'
+
+  # Manual trigger from the Actions tab — useful for testing or catching up.
+  workflow_dispatch:
+
+permissions:
+  # We need to commit the updated CSV and HTML back to the repo.
+  contents: write
+
+jobs:
+  fetch-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch NSE data
+        # The script logs to data/nse_flow_history.csv (created if missing).
+        # We allow this step to "fail" (NSE may rate-limit cloud IPs) so the
+        # dashboard can still regenerate from existing history on bad days.
+        run: |
+          mkdir -p data
+          python3 nse_institutional_flow.py --force || echo "NSE fetch failed; continuing with existing history"
+        continue-on-error: true
+
+      - name: Generate HTML dashboard
+        run: |
+          mkdir -p docs
+          python3 generate_dashboard.py
+        # If history is empty, generator still produces a placeholder page.
+
+      - name: Commit updates back to repo
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ docs/
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "auto: NSE flow update $(date -u +%Y-%m-%d)"
+            git push
+          fi

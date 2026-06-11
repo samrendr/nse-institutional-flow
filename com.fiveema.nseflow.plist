@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.fiveema.nseflow</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/Frameworks/Python.framework/Versions/3.13/bin/python3</string>
+        <string>/Users/samrendrasingh/Documents/fiveema/nse_institutional_flow.py</string>
+    </array>
+
+    <!--
+        Run daily at 6:45 PM IST. NSE publishes FII/DII data around 6:00-6:30 PM IST,
+        so 6:45 PM gives a buffer for late updates. Adjust the Hour/Minute as you prefer.
+
+        StartCalendarInterval without Weekday means runs every day. The Python script
+        itself skips weekends via is_market_day(), so weekend runs are no-ops.
+    -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>18</integer>
+        <key>Minute</key>
+        <integer>45</integer>
+    </dict>
+
+    <!-- Logs append to these files. Tail them if you want to see history. -->
+    <key>StandardOutPath</key>
+    <string>/Users/samrendrasingh/Documents/fiveema/data/nse_flow_stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/samrendrasingh/Documents/fiveema/data/nse_flow_stderr.log</string>
+
+    <!--
+        RunAtLoad=false means don't run immediately when loaded; wait for the scheduled time.
+        KeepAlive=false means launchd shouldn't restart it; we only want one run per day.
+    -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>KeepAlive</key>
+    <false/>
+
+    <!-- Working directory ensures relative paths in the script behave consistently. -->
+    <key>WorkingDirectory</key>
+    <string>/Users/samrendrasingh/Documents/fiveema</string>
+</dict>
+</plist>

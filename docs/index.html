@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NSE Institutional Flow</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root {
+      --bg:           #0d1117;
+      --bg-elevated:  #161b22;
+      --border:       #30363d;
+      --text:         #e6edf3;
+      --text-muted:   #8b949e;
+      --green:        #3fb950;
+      --red:          #f85149;
+      --yellow:       #d29922;
+      --blue:         #58a6ff;
+      --purple:       #a371f7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+    }
+    h1 { font-size: 22px; font-weight: 600; }
+    .meta { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+
+    .verdict-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .verdict-label { font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; }
+    .verdict { font-size: 28px; font-weight: 700; margin-top: 8px; }
+    .verdict-strong-bull { color: var(--green); }
+    .verdict-bull        { color: #56d364; }
+    .verdict-divergent   { color: var(--yellow); }
+    .verdict-mixed       { color: var(--text-muted); }
+    .verdict-bear        { color: #ff7b72; }
+    .verdict-strong-bear { color: var(--red); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .card h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { color: var(--text-muted); }
+    .stat-value { font-family: "SF Mono", Monaco, Consolas, monospace; font-weight: 600; }
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
+
+    .chart-section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .chart-section h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    canvas { max-height: 280px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 12px;
+    }
+    th, td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #21262d;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+    tr:last-child td { border-bottom: none; }
+    td.num { font-family: "SF Mono", Monaco, Consolas, monospace; text-align: right; }
+
+    footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+    .table-wrap { overflow-x: auto; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>NSE Institutional Flow</h1>
+  <div class="meta">Latest: — · Updated 2026-06-11 17:26 UTC · 0 days logged</div>
+</header>
+
+<div class="verdict-box">
+  <div class="verdict-label">Today's Verdict</div>
+  <div class="verdict verdict-mixed">—</div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Cash Market</h2>
+    <div class="stat-row">
+      <span class="stat-label">FII today</span>
+      <span class="stat-value ">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">DII today</span>
+      <span class="stat-value ">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">FII 5-day cumulative</span>
+      <span class="stat-value ">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">DII 5-day cumulative</span>
+      <span class="stat-value ">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>NIFTY 50</h2>
+    <div class="stat-row">
+      <span class="stat-label">Spot</span>
+      <span class="stat-value">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">PCR — Weekly</span>
+      <span class="stat-value">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">PCR — Monthly</span>
+      <span class="stat-value">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Max pain — Weekly</span>
+      <span class="stat-value">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Max pain — Monthly</span>
+      <span class="stat-value">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>BANK NIFTY</h2>
+    <div class="stat-row">
+      <span class="stat-label">Spot</span>
+      <span class="stat-value">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">PCR — Weekly</span>
+      <span class="stat-value">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">PCR — Monthly</span>
+      <span class="stat-value">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Max pain — Weekly</span>
+      <span class="stat-value">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Max pain — Monthly</span>
+      <span class="stat-value">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>How to read this</h2>
+    <p style="color: var(--text-muted); margin-bottom: 10px;">
+      The verdict combines FII + DII 5-day positioning with NIFTY monthly PCR.
+    </p>
+    <ul style="color: var(--text-muted); padding-left: 16px; font-size: 12px;">
+      <li><strong style="color: var(--green);">Bullish bias</strong> — at least two signals are bullish</li>
+      <li><strong style="color: #d29922;">Divergent</strong> — DII absorbing FII selling, market often resilient</li>
+      <li><strong style="color: var(--red);">Bearish bias</strong> — at least two signals are bearish</li>
+      <li><strong>Single-day data is noise.</strong> The 5-day cumulative and monthly PCR are the real signals.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="chart-section">
+  <h2>FII vs DII — Last 60 Days</h2>
+  <canvas id="flowChart"></canvas>
+</div>
+
+<div class="chart-section">
+  <h2>NIFTY Spot vs Monthly PCR — Last 60 Days</h2>
+  <canvas id="niftyChart"></canvas>
+</div>
+
+<h2 style="font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 12px;">History (last 30 days)</h2>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>FII Cash</th>
+      <th>DII Cash</th>
+      <th>NIFTY Spot</th>
+      <th>NIFTY PCR (M)</th>
+      <th>NIFTY MaxPain (M)</th>
+      <th>BNF PCR (M)</th>
+      <th>Verdict</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+  </tbody>
+</table>
+</div>
+
+<footer>
+  Generated by nse_institutional_flow.py · Updated daily ~13:15 UTC (6:45 PM IST) via GitHub Actions ·
+  <a href="https://github.com" style="color: var(--blue);">source</a>
+</footer>
+
+<script>
+const data = {"labels": [], "fii": [], "dii": [], "nifty": [], "nifty_pcr_m": []};
+
+new Chart(document.getElementById('flowChart'), {
+  type: 'bar',
+  data: {
+    labels: data.labels,
+    datasets: [
+      { label: 'FII (₹ Cr)', data: data.fii, backgroundColor: '#58a6ff' },
+      { label: 'DII (₹ Cr)', data: data.dii, backgroundColor: '#a371f7' }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
+      x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
+    },
+    plugins: { legend: { labels: { color: '#e6edf3' } } }
+  }
+});
+
+new Chart(document.getElementById('niftyChart'), {
+  type: 'line',
+  data: {
+    labels: data.labels,
+    datasets: [
+      {
+        label: 'NIFTY Spot',
+        data: data.nifty,
+        borderColor: '#3fb950',
+        backgroundColor: 'transparent',
+        yAxisID: 'y',
+        tension: 0.2,
+      },
+      {
+        label: 'Monthly PCR',
+        data: data.nifty_pcr_m,
+        borderColor: '#d29922',
+        backgroundColor: 'transparent',
+        yAxisID: 'y1',
+        tension: 0.2,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y:  { position: 'left',  grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
+      y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#8b949e' } },
+      x:  { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
+    },
+    plugins: { legend: { labels: { color: '#e6edf3' } } }
+  }
+});
+</script>
+
+</body>
+</html>
