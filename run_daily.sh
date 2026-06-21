@@ -16,6 +16,12 @@ cd /Users/samrendrasingh/nse-flow-auto || exit 1
 
 echo "=== $(date '+%Y-%m-%d %H:%M:%S %Z') Daily NSE run ==="
 
+# Self-heal: this is an automation-only clone, so an uncommitted change to the
+# generated dashboard is leftover from an interrupted run. Discard it so the
+# rebase below never aborts on a dirty tree. (Deliberately never touches data/ —
+# the CSV is real history and is committed by every successful run.)
+git checkout -- docs/ 2>/dev/null || true
+
 # Sync first so we don't clobber commits made by the cloud cron or other machines.
 echo "[0/4] Syncing with origin/main..."
 git pull --rebase origin main || { echo "  pull failed; aborting"; exit 1; }
