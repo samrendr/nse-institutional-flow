@@ -12,7 +12,7 @@ set -u
 # launchd ships an almost-empty PATH; restore the tools we need.
 export PATH="/opt/homebrew/bin:/usr/local/bin:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/bin:/bin"
 
-cd /Users/samrendrasingh/Documents/fiveema || exit 1
+cd /Users/samrendrasingh/nse-flow-auto || exit 1
 
 echo "=== $(date '+%Y-%m-%d %H:%M:%S %Z') Daily NSE run ==="
 
@@ -21,7 +21,9 @@ echo "[0/4] Syncing with origin/main..."
 git pull --rebase origin main || { echo "  pull failed; aborting"; exit 1; }
 
 echo "[1/4] Fetching NSE data..."
-python3 nse_institutional_flow.py --force || echo "  fetch returned non-zero; continuing"
+# No --force: on weekends/holidays is_market_day() makes this a clean no-op,
+# so we only ingest on the evenings NSE actually releases data (Mon-Fri).
+python3 nse_institutional_flow.py || echo "  fetch returned non-zero; continuing"
 
 echo "[2/4] Regenerating dashboard..."
 python3 generate_dashboard.py || { echo "  dashboard generation failed; aborting push"; exit 1; }

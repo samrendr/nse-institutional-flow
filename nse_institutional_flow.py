@@ -37,7 +37,10 @@ import pandas as pd
 
 
 # ============ CONFIGURATION ============
-DATA_DIR = Path.home() / "Documents" / "fiveema" / "data"
+# Paths are resolved relative to this script so the tracker is location-independent
+# (it runs from the ~/nse-flow-auto automation copy, outside the TCC-protected
+# Documents folder, as well as from the dev repo).
+DATA_DIR = Path(__file__).resolve().parent / "data"
 LOG_PATH = DATA_DIR / "nse_flow_history.csv"
 
 NSE_BASE = "https://www.nseindia.com"
