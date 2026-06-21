@@ -8,15 +8,22 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/samrendrasingh/Documents/fiveema/run_daily.sh</string>
+        <string>/Users/samrendrasingh/nse-flow-auto/run_daily.sh</string>
     </array>
 
     <!--
         Run daily at 6:45 PM IST. NSE publishes FII/DII data around 6:00-6:30 PM IST,
-        so 6:45 PM gives a buffer for late updates. Adjust the Hour/Minute as you prefer.
+        so 6:45 PM gives a buffer for late updates.
 
-        StartCalendarInterval without Weekday means runs every day. The Python script
-        itself skips weekends via is_market_day(), so weekend runs are no-ops.
+        This job lives OUTSIDE ~/Documents (in ~/nse-flow-auto) on purpose: macOS TCC
+        privacy protection blocks launchd background jobs from reading the Documents
+        folder ("Operation not permitted"), which is what silently broke the previous
+        setup. Running from a non-protected path needs no Full Disk Access grant.
+
+        run_daily.sh no longer passes --force, so the Python tracker's is_market_day()
+        makes weekend/holiday runs clean no-ops — we only ingest on evenings NSE
+        actually releases data. launchd also fires a missed run once on wake if the
+        Mac was asleep at 18:45.
     -->
     <key>StartCalendarInterval</key>
     <dict>
@@ -26,25 +33,20 @@
         <integer>45</integer>
     </dict>
 
-    <!-- Logs append to these files. Tail them if you want to see history. -->
+    <!-- Logs append here. Tail them to see run history. -->
     <key>StandardOutPath</key>
-    <string>/Users/samrendrasingh/Documents/fiveema/data/nse_flow_stdout.log</string>
+    <string>/Users/samrendrasingh/nse-flow-auto/data/nse_flow_stdout.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/samrendrasingh/Documents/fiveema/data/nse_flow_stderr.log</string>
+    <string>/Users/samrendrasingh/nse-flow-auto/data/nse_flow_stderr.log</string>
 
-    <!--
-        RunAtLoad=false means don't run immediately when loaded; wait for the scheduled time.
-        KeepAlive=false means launchd shouldn't restart it; we only want one run per day.
-    -->
     <key>RunAtLoad</key>
     <false/>
 
     <key>KeepAlive</key>
     <false/>
 
-    <!-- Working directory ensures relative paths in the script behave consistently. -->
     <key>WorkingDirectory</key>
-    <string>/Users/samrendrasingh/Documents/fiveema</string>
+    <string>/Users/samrendrasingh/nse-flow-auto</string>
 </dict>
 </plist>
