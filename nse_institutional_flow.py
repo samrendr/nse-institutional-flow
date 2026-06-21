@@ -37,18 +37,21 @@ import pandas as pd
 
 
 # ============ CONFIGURATION ============
-# Paths are resolved relative to this script so the tracker is location-independent
-# (it runs from the ~/nse-flow-auto automation copy, outside the TCC-protected
-# Documents folder, as well as from the dev repo).
+# Paths resolve relative to this script so the tracker runs from the
+# ~/nse-flow-auto automation copy (outside TCC-protected Documents).
 DATA_DIR = Path(__file__).resolve().parent / "data"
 LOG_PATH = DATA_DIR / "nse_flow_history.csv"
 
 NSE_BASE = "https://www.nseindia.com"
 NSE_HOMEPAGE = f"{NSE_BASE}/"
+# NSE deprecated /api/option-chain-indices (now 404). Current flow is two-step:
+#   contract-info -> expiry list ; option-chain-v3?...&expiry= -> chain for ONE expiry.
+# The /option-chain page (not the homepage, which 403s bots) sets the needed cookies.
+NSE_OPTION_CHAIN_PAGE = f"{NSE_BASE}/option-chain"
+NSE_CONTRACT_INFO = NSE_BASE + "/api/option-chain-contract-info?symbol={sym}"
+NSE_OPTION_CHAIN_V3 = NSE_BASE + "/api/option-chain-v3?type=Indices&symbol={sym}&expiry={exp}"
 NSE_API = {
     "fii_dii": f"{NSE_BASE}/api/fiidiiTradeReact",
-    "option_chain_nifty": f"{NSE_BASE}/api/option-chain-indices?symbol=NIFTY",
-    "option_chain_banknifty": f"{NSE_BASE}/api/option-chain-indices?symbol=BANKNIFTY",
     "block_deal": f"{NSE_BASE}/api/block-deal",
     "participant_wise_oi": f"{NSE_BASE}/api/snapshot-derivatives-equity",
 }
@@ -77,9 +80,14 @@ def nse_session() -> requests.Session:
     """
     s = requests.Session()
     s.headers.update(HEADERS)
+    # Homepage 403s bots; the /option-chain page returns 200 and sets the cookies
+    # (nsit, _abck) that the JSON APIs require. Warm both; tolerate homepage failure.
     try:
-        r = s.get(NSE_HOMEPAGE, timeout=10)
-        r.raise_for_status()
+        s.get(NSE_HOMEPAGE, timeout=10)
+    except Exception:
+        pass
+    try:
+        s.get(NSE_OPTION_CHAIN_PAGE, timeout=12)
         time.sleep(1)  # let NSE breathe
     except Exception as e:
         print(f"  warning: couldn't establish NSE session ({e}). API calls may fail.", file=sys.stderr)
@@ -94,9 +102,9 @@ def fetch_json(session: requests.Session, url: str, retries: int = 2) -> Optiona
             if r.status_code == 200:
                 return r.json()
             if r.status_code in (401, 403):
-                # Cookies expired. Re-establish.
+                # Cookies expired. Re-warm via the option-chain page (homepage 403s bots).
                 time.sleep(2)
-                session.get(NSE_HOMEPAGE, timeout=10)
+                session.get(NSE_OPTION_CHAIN_PAGE, timeout=12)
                 continue
             print(f"  warning: {url} returned {r.status_code}", file=sys.stderr)
             return None
@@ -168,10 +176,29 @@ def find_monthly_expiry(expiry_dates: list[str]) -> Optional[str]:
     return None
 
 
-def fetch_option_chain_raw(session: requests.Session, symbol: str) -> Optional[dict]:
-    """Fetch raw NSE option chain. Returns whole JSON or None on failure."""
-    url = NSE_API["option_chain_nifty"] if symbol == "NIFTY" else NSE_API["option_chain_banknifty"]
-    return fetch_json(session, url)
+def fetch_chain_expiries(session: requests.Session, symbol: str) -> list[str]:
+    """Expiry list from the contract-info endpoint (nearest first)."""
+    data = fetch_json(session, NSE_CONTRACT_INFO.format(sym=symbol))
+    if not data:
+        return []
+    return data.get("expiryDates") or data.get("records", {}).get("expiryDates") or []
+
+
+def fetch_chain_v3(session: requests.Session, symbol: str, expiry: str) -> Optional[dict]:
+    """Option chain for ONE expiry via the v3 endpoint. Normalises each row so it
+    carries `expiryDate` = the queried expiry (v3 omits it at row level), matching
+    the shape analyze_expiry expects."""
+    import urllib.parse
+    url = NSE_OPTION_CHAIN_V3.format(sym=symbol, exp=urllib.parse.quote(expiry))
+    data = fetch_json(session, url)
+    if not data:
+        return None
+    recs = data.get("records", {})
+    rows = recs.get("data", []) or []
+    for r in rows:
+        r["expiryDate"] = expiry
+    return {"records": {"underlyingValue": recs.get("underlyingValue"),
+                        "expiryDates": recs.get("expiryDates", []), "data": rows}}
 
 
 def analyze_expiry(raw_data: dict, target_expiry: str) -> dict:
@@ -244,20 +271,23 @@ def analyze_expiry(raw_data: dict, target_expiry: str) -> dict:
 
 
 def fetch_option_chain_both(session: requests.Session, symbol: str) -> dict:
-    """Fetch the option chain once and analyze both nearest weekly + monthly expiry."""
-    raw = fetch_option_chain_raw(session, symbol)
-    if not raw:
-        return {"weekly": {}, "monthly": {}}
-    records = raw.get("records", {})
-    expiry_dates = records.get("expiryDates", [])
+    """Fetch nearest weekly + monthly expiry chains (v3, one call each) and analyze both."""
+    expiry_dates = fetch_chain_expiries(session, symbol)
     if not expiry_dates:
         return {"weekly": {}, "monthly": {}}
 
     weekly_expiry = expiry_dates[0]
     monthly_expiry = find_monthly_expiry(expiry_dates) or weekly_expiry
 
-    weekly = analyze_expiry(raw, weekly_expiry)
-    monthly = analyze_expiry(raw, monthly_expiry) if monthly_expiry != weekly_expiry else weekly
+    weekly_raw = fetch_chain_v3(session, symbol, weekly_expiry)
+    weekly = analyze_expiry(weekly_raw, weekly_expiry) if weekly_raw else {}
+
+    if monthly_expiry != weekly_expiry:
+        time.sleep(0.6)  # be gentle with NSE between calls
+        monthly_raw = fetch_chain_v3(session, symbol, monthly_expiry)
+        monthly = analyze_expiry(monthly_raw, monthly_expiry) if monthly_raw else {}
+    else:
+        monthly = weekly
     return {"weekly": weekly, "monthly": monthly}
 
 

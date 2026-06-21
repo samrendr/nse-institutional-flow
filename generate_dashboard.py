@@ -12,7 +12,7 @@ Mobile-friendly, dark theme, no build step required.
 
 import json
 import sys
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -73,7 +73,7 @@ def verdict_class(v: Optional[str]) -> str:
 
 # ============ BUILD HTML ============
 def build_html(df: pd.DataFrame) -> str:
-    last_updated = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    last_updated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     if df.empty:
         latest = {}
@@ -161,6 +161,12 @@ def build_html(df: pd.DataFrame) -> str:
     }}
     h1 {{ font-size: 22px; font-weight: 600; }}
     .meta {{ color: var(--text-muted); font-size: 12px; margin-top: 4px; }}
+
+    .tabbar {{ display: flex; gap: 4px; margin: 16px 0 24px; border-bottom: 1px solid var(--border); }}
+    .tab {{ padding: 10px 18px; color: var(--text-muted); text-decoration: none; font-weight: 600;
+      font-size: 13px; border-bottom: 2px solid transparent; }}
+    .tab:hover {{ color: var(--text); }}
+    .tab.active {{ color: var(--text); border-bottom-color: var(--blue); }}
 
     .verdict-box {{
       background: var(--bg-elevated);
@@ -270,6 +276,11 @@ def build_html(df: pd.DataFrame) -> str:
   <h1>NSE Institutional Flow</h1>
   <div class="meta">Latest: {latest_date} · Updated {last_updated} · {len(df)} days logged</div>
 </header>
+
+<nav class="tabbar">
+  <a href="index.html" class="tab active">Institutional Flow</a>
+  <a href="gex.html" class="tab">Dealer Gamma (GEX)</a>
+</nav>
 
 <div class="verdict-box">
   <div class="verdict-label">Today's Verdict</div>
