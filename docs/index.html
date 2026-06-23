@@ -147,7 +147,7 @@
 
 <header>
   <h1>NSE Institutional Flow</h1>
-  <div class="meta">Latest: 2026-06-22 (Monday) · Updated 2026-06-22 17:47 UTC · 4 days logged</div>
+  <div class="meta">Latest: 2026-06-23 (Tuesday) · Updated 2026-06-23 04:19 UTC · 5 days logged</div>
 </header>
 
 <nav class="tabbar">
@@ -165,19 +165,19 @@
     <h2>Cash Market</h2>
     <div class="stat-row">
       <span class="stat-label">FII today</span>
-      <span class="stat-value ">—</span>
+      <span class="stat-value negative">-636 Cr</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">DII today</span>
-      <span class="stat-value ">—</span>
+      <span class="stat-value positive">+1,036 Cr</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">FII 5-day cumulative</span>
-      <span class="stat-value negative">-4,610 Cr</span>
+      <span class="stat-value negative">-5,246 Cr</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">DII 5-day cumulative</span>
-      <span class="stat-value positive">+9,485 Cr</span>
+      <span class="stat-value positive">+10,520 Cr</span>
     </div>
   </div>
 
@@ -185,23 +185,23 @@
     <h2>NIFTY 50</h2>
     <div class="stat-row">
       <span class="stat-label">Spot</span>
-      <span class="stat-value">—</span>
+      <span class="stat-value">24,121.75</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">PCR — Weekly</span>
-      <span class="stat-value">—</span>
+      <span class="stat-value">1.15</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">PCR — Monthly</span>
-      <span class="stat-value">—</span>
+      <span class="stat-value">1.00</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">Max pain — Weekly</span>
-      <span class="stat-value">—</span>
+      <span class="stat-value">24,100</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">Max pain — Monthly</span>
-      <span class="stat-value">—</span>
+      <span class="stat-value">24,100</span>
     </div>
   </div>
 
@@ -209,23 +209,23 @@
     <h2>BANK NIFTY</h2>
     <div class="stat-row">
       <span class="stat-label">Spot</span>
-      <span class="stat-value">—</span>
+      <span class="stat-value">57,927.60</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">PCR — Weekly</span>
-      <span class="stat-value">—</span>
+      <span class="stat-value">1.06</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">PCR — Monthly</span>
-      <span class="stat-value">—</span>
+      <span class="stat-value">1.06</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">Max pain — Weekly</span>
-      <span class="stat-value">—</span>
+      <span class="stat-value">57,000</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">Max pain — Monthly</span>
-      <span class="stat-value">—</span>
+      <span class="stat-value">57,000</span>
     </div>
   </div>
 
@@ -271,6 +271,17 @@
   </thead>
   <tbody>
     
+          <tr>
+            <td>2026-06-23</td>
+            <td class="num">-636 Cr</td>
+            <td class="num">+1,036 Cr</td>
+            <td class="num">24,122</td>
+            <td class="num">1.00</td>
+            <td class="num">24,100</td>
+            <td class="num">1.06</td>
+            <td class="verdict-divergent">DIVERGENT (DII absorbing FII)</td>
+          </tr>
+        
           <tr>
             <td>2026-06-22</td>
             <td class="num">—</td>
@@ -325,7 +336,7 @@
 </footer>
 
 <script>
-const data = {"labels": ["11 Jun", "11 Jun", "22 Jun", "22 Jun"], "fii": [-1987.09, -1987.09, -635.91, null], "dii": [4224.51, 4224.51, 1035.72, null], "nifty": [null, null, 24102.9, null], "nifty_pcr_m": [null, null, 1.0020471543836114, null]};
+const data = {"labels": ["11 Jun", "11 Jun", "22 Jun", "22 Jun", "23 Jun"], "fii": [-1987.09, -1987.09, -635.91, null, -635.91], "dii": [4224.51, 4224.51, 1035.72, null, 1035.72], "nifty": [null, null, 24102.9, null, 24121.75], "nifty_pcr_m": [null, null, 1.0020471543836114, null, 1.0016505729513616]};
 
 new Chart(document.getElementById('flowChart'), {
   type: 'bar',
